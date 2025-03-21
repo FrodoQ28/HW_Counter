@@ -1,46 +1,51 @@
+using System;
 using System.Collections;
-using TMPro;
 using UnityEngine;
 
 public class Counter : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI _text;
-
+    private Coroutine _counting;
     private int _number = 0;
-    private bool _canCount = false;
 
-    private void Start()
-    {
-        _text.text = _number.ToString();
+    public event Action NumberChanged;
 
-        StartCoroutine(Counting(_canCount));
-    }
+    public int Number => _number;
 
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))
-            _canCount = !_canCount;
+        {
+            if (_counting != default)
+            {
+                StopCounting();
+            }
+            else
+            {
+                _counting = StartCoroutine(Counting());
+            }
+        }
     }
 
-    private void DisplayNextNumber()
+    private void StopCounting()
     {
-        _number++;
-        _text.text = _number.ToString();
+        if (_counting != null)
+            StopCoroutine(_counting);
+
+        _counting = default;
+
     }
 
-    public IEnumerator Counting(bool CanCount)
+    public IEnumerator Counting()
     {
-        bool isRunning = true;
         var waitTime = new WaitForSeconds(0.5f);
-        var waitOfTrue = new WaitUntil(() => _canCount);
 
-        while (isRunning)
+        while (enabled)
         {
             yield return waitTime;
 
-            yield return waitOfTrue;
+            _number++;
 
-            DisplayNextNumber();
+            NumberChanged?.Invoke();
         }
     }
 }
